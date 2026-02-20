@@ -14,5 +14,6 @@ type AuthenticationResult struct {
 }
 
 type Authenticator interface {
-	Authenticate(ctx context.Context, creds Credentials) (AuthenticationResult, error)
+	Method() Method
+	Authenticate(ctx context.Context, identityID string, creds Credentials) (AuthenticationResult, error)
 }

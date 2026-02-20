@@ -9,19 +9,16 @@ import (
 	password "github.com/SlateLH/authn/authenticators"
 )
 
-type mockCredentials struct{}
+type mockCredentials struct {
+	identifier authn.Identifier
+}
+
+func (m *mockCredentials) Identifier() authn.Identifier {
+	return m.identifier
+}
 
 func (m *mockCredentials) Method() authn.Method {
 	return "mock method"
-}
-
-type mockidentityResolver struct {
-	identityID string
-	err        error
-}
-
-func (m *mockidentityResolver) Resolve(ctx context.Context, identifier authn.Identifier) (identityID string, err error) {
-	return m.identityID, m.err
 }
 
 type mockStore struct {
@@ -43,17 +40,15 @@ func (m *mockVerifier) Verify(ctx context.Context, hash []byte, password string)
 
 func TestNewAuthenticatorInvalidDependencies(t *testing.T) {
 	testCases := []struct {
-		identityResolver authn.IdentityResolver
-		store            password.Store
-		verifier         password.Verifier
+		store    password.Store
+		verifier password.Verifier
 	}{
-		{identityResolver: nil, store: &mockStore{}, verifier: &mockVerifier{}},
-		{identityResolver: &mockidentityResolver{}, store: nil, verifier: &mockVerifier{}},
-		{identityResolver: &mockidentityResolver{}, store: &mockStore{}, verifier: nil},
+		{store: nil, verifier: &mockVerifier{}},
+		{store: &mockStore{}, verifier: nil},
 	}
 
 	for _, tc := range testCases {
-		_, err := password.NewAuthenticator(tc.identityResolver, tc.store, tc.verifier)
+		_, err := password.NewAuthenticator(tc.store, tc.verifier)
 
 		if err == nil {
 			t.Errorf("expected err to not be nil")
@@ -62,7 +57,7 @@ func TestNewAuthenticatorInvalidDependencies(t *testing.T) {
 }
 
 func TestNewAuthenticatorValidDependencies(t *testing.T) {
-	_, err := password.NewAuthenticator(&mockidentityResolver{}, &mockStore{}, &mockVerifier{})
+	_, err := password.NewAuthenticator(&mockStore{}, &mockVerifier{})
 
 	if err != nil {
 		t.Errorf("expected err to be nil, received \"%v\"", err)
@@ -71,46 +66,40 @@ func TestNewAuthenticatorValidDependencies(t *testing.T) {
 
 func TestAuthenticateInvalidCredentials(t *testing.T) {
 	testCases := []struct {
-		identityResolver authn.IdentityResolver
-		store            password.Store
-		verifier         password.Verifier
-		creds            authn.Credentials
+		store      password.Store
+		verifier   password.Verifier
+		identityID string
+		creds      authn.Credentials
 	}{
 		{
-			identityResolver: &mockidentityResolver{err: nil},
-			store:            &mockStore{err: nil},
-			verifier:         &mockVerifier{err: nil},
-			creds:            &mockCredentials{},
+			store:    &mockStore{},
+			verifier: &mockVerifier{},
 		},
 		{
-			identityResolver: &mockidentityResolver{err: nil},
-			store:            &mockStore{err: nil},
-			verifier:         &mockVerifier{err: nil},
-			creds:            password.Credentials{},
+			store:    &mockStore{},
+			verifier: &mockVerifier{},
+			creds:    &mockCredentials{},
 		},
 		{
-			identityResolver: &mockidentityResolver{err: errors.New("mock identity resolver error")},
-			store:            &mockStore{err: nil},
-			verifier:         &mockVerifier{err: nil},
-			creds:            password.Credentials{Password: "mock password"},
+			store:    &mockStore{},
+			verifier: &mockVerifier{},
+			creds:    password.NewCredentials(authn.Identifier{}, ""),
 		},
 		{
-			identityResolver: &mockidentityResolver{err: nil},
-			store:            &mockStore{err: errors.New("mock store error")},
-			verifier:         &mockVerifier{err: nil},
-			creds:            password.Credentials{Password: "mock password"},
+			store:    &mockStore{err: errors.New("mock store error")},
+			verifier: &mockVerifier{},
+			creds:    password.NewCredentials(authn.Identifier{}, "mock password"),
 		},
 		{
-			identityResolver: &mockidentityResolver{err: nil},
-			store:            &mockStore{err: nil},
-			verifier:         &mockVerifier{err: errors.New("mock verifier error")},
-			creds:            password.Credentials{Password: "mock password"},
+			store:    &mockStore{},
+			verifier: &mockVerifier{err: errors.New("mock verifier error")},
+			creds:    password.NewCredentials(authn.Identifier{}, "mock password"),
 		},
 	}
 
 	for _, tc := range testCases {
-		authenticator, _ := password.NewAuthenticator(tc.identityResolver, tc.store, tc.verifier)
-		_, err := authenticator.Authenticate(context.Background(), tc.creds)
+		authenticator, _ := password.NewAuthenticator(tc.store, tc.verifier)
+		_, err := authenticator.Authenticate(context.Background(), tc.identityID, tc.creds)
 
 		if err == nil {
 			t.Errorf("expected err to not be nil")
@@ -120,23 +109,15 @@ func TestAuthenticateInvalidCredentials(t *testing.T) {
 
 func TestAuthenticateValidCredentials(t *testing.T) {
 	identityID := "mock identity ID"
-	creds := password.Credentials{
-		Password: "mock password",
-	}
-
-	authenticator, _ := password.NewAuthenticator(
-		&mockidentityResolver{identityID: identityID, err: nil},
-		&mockStore{err: nil},
-		&mockVerifier{err: nil},
-	)
-
-	result, err := authenticator.Authenticate(context.Background(), creds)
+	creds := password.NewCredentials(authn.Identifier{}, "mock password")
+	authenticator, _ := password.NewAuthenticator(&mockStore{}, &mockVerifier{})
+	result, err := authenticator.Authenticate(context.Background(), identityID, creds)
 
 	if err != nil {
 		t.Errorf("expected err to be nil, received \"%v\"", err)
 	}
 
 	if identityID != result.Identity.ID {
-		t.Errorf("expected identity ID to be \"%v\", received \"%v\"", identityID, result.Identity.ID)
+		t.Errorf("expected identity ID to be \"%s\", received \"%s\"", identityID, result.Identity.ID)
 	}
 }

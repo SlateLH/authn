@@ -6,37 +6,59 @@ import (
 )
 
 var (
-	ErrInvalidMethod = errors.New("invalid method")
+	errInvalidMethod           = errors.New("invalid method")
+	errInvalidIdentityResolver = errors.New("invalid identity resolver")
 )
 
 type Method string
 
 type Service interface {
-	Register(method Method, auth Authenticator)
+	Register(auth Authenticator)
 	Authenticate(ctx context.Context, creds Credentials) (AuthenticationResult, error)
 }
 
 type service struct {
-	methods map[Method]Authenticator
+	methods          map[Method]Authenticator
+	identityResolver IdentityResolver
 }
 
-func (s *service) Register(method Method, auth Authenticator) {
-	s.methods[method] = auth
+func (s *service) Register(auth Authenticator) {
+	s.methods[auth.Method()] = auth
 }
 
 func (s *service) Authenticate(ctx context.Context, creds Credentials) (AuthenticationResult, error) {
+	if s.identityResolver == nil {
+		return AuthenticationResult{}, errInvalidIdentityResolver
+	}
+
+	if creds == nil {
+		return AuthenticationResult{}, errInvalidMethod
+	}
+
 	auth, ok := s.methods[creds.Method()]
 	if auth == nil || !ok {
-		return AuthenticationResult{}, ErrInvalidMethod
+		return AuthenticationResult{}, errInvalidMethod
 	}
 
-	return auth.Authenticate(ctx, creds)
+	identityID, err := s.identityResolver.Resolve(ctx, creds.Identifier())
+	if err != nil {
+		return AuthenticationResult{}, ErrInvalidCredentials
+	}
+
+	return auth.Authenticate(ctx, identityID, creds)
 }
 
-func New() Service {
+func New(identityResolver IdentityResolver) (Service, error) {
+	if identityResolver == nil {
+		return nil, errInvalidIdentityResolver
+	}
+
 	methods := make(map[Method]Authenticator)
 
-	return &service{
-		methods: methods,
+	svc := &service{
+		methods:          methods,
+		identityResolver: identityResolver,
 	}
+
+	return svc, nil
 }

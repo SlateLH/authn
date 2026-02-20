@@ -10,22 +10,43 @@ import (
 const Method authn.Method = "password"
 
 var (
-	errInvalidIdentityResolver = errors.New("invalid identity resolver")
-	errInvalidStore            = errors.New("invalid password store")
-	errInvalidVerifier         = errors.New("invalid password verifier")
+	errInvalidStore    = errors.New("invalid password store")
+	errInvalidVerifier = errors.New("invalid password verifier")
 )
 
-type Credentials struct {
-	Identifier authn.Identifier
-	Password   string
+type Credentials interface {
+	Identifier() authn.Identifier
+	Password() string
+	Method() authn.Method
 }
 
-func (c Credentials) Method() authn.Method {
+type credentials struct {
+	identifier authn.Identifier
+	password   string
+}
+
+func (c credentials) Identifier() authn.Identifier {
+	return c.identifier
+}
+
+func (c credentials) Password() string {
+	return c.password
+}
+
+func (c credentials) Method() authn.Method {
 	return Method
 }
 
+func NewCredentials(identifier authn.Identifier, password string) Credentials {
+	return &credentials{
+		identifier: identifier,
+		password:   password,
+	}
+}
+
 type Authenticator interface {
-	Authenticate(ctx context.Context, creds authn.Credentials) (authn.AuthenticationResult, error)
+	Method() authn.Method
+	Authenticate(ctx context.Context, identityID string, creds authn.Credentials) (authn.AuthenticationResult, error)
 }
 
 type Store interface {
@@ -37,16 +58,11 @@ type Verifier interface {
 }
 
 type authenticator struct {
-	identityResolver authn.IdentityResolver
-	store            Store
-	verifier         Verifier
+	store    Store
+	verifier Verifier
 }
 
 func (a *authenticator) validateDependencies() error {
-	if a.identityResolver == nil {
-		return errInvalidIdentityResolver
-	}
-
 	if a.store == nil {
 		return errInvalidStore
 	}
@@ -58,7 +74,11 @@ func (a *authenticator) validateDependencies() error {
 	return nil
 }
 
-func (a *authenticator) Authenticate(ctx context.Context, creds authn.Credentials) (authn.AuthenticationResult, error) {
+func (a *authenticator) Method() authn.Method {
+	return Method
+}
+
+func (a *authenticator) Authenticate(ctx context.Context, identityID string, creds authn.Credentials) (authn.AuthenticationResult, error) {
 	c, ok := creds.(Credentials)
 	if !ok {
 		return authn.AuthenticationResult{}, authn.ErrInvalidCredentials
@@ -68,12 +88,7 @@ func (a *authenticator) Authenticate(ctx context.Context, creds authn.Credential
 		return authn.AuthenticationResult{}, err
 	}
 
-	if c.Password == "" {
-		return authn.AuthenticationResult{}, authn.ErrInvalidCredentials
-	}
-
-	identityID, err := a.identityResolver.Resolve(ctx, c.Identifier)
-	if err != nil {
+	if c.Password() == "" {
 		return authn.AuthenticationResult{}, authn.ErrInvalidCredentials
 	}
 
@@ -82,7 +97,7 @@ func (a *authenticator) Authenticate(ctx context.Context, creds authn.Credential
 		return authn.AuthenticationResult{}, authn.ErrInvalidCredentials
 	}
 
-	if err := a.verifier.Verify(ctx, hash, c.Password); err != nil {
+	if err := a.verifier.Verify(ctx, hash, c.Password()); err != nil {
 		return authn.AuthenticationResult{}, authn.ErrInvalidCredentials
 	}
 
@@ -98,14 +113,12 @@ func (a *authenticator) Authenticate(ctx context.Context, creds authn.Credential
 }
 
 func NewAuthenticator(
-	identityResolver authn.IdentityResolver,
 	store Store,
 	verifier Verifier,
 ) (Authenticator, error) {
 	auth := &authenticator{
-		identityResolver: identityResolver,
-		store:            store,
-		verifier:         verifier,
+		store:    store,
+		verifier: verifier,
 	}
 
 	if err := auth.validateDependencies(); err != nil {
