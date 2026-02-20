@@ -37,7 +37,7 @@ type Verifier interface {
 }
 
 type authenticator struct {
-	identityResolver authn.IdentifierResolver
+	identityResolver authn.IdentityResolver
 	store            Store
 	verifier         Verifier
 }
@@ -98,7 +98,7 @@ func (a *authenticator) Authenticate(ctx context.Context, creds authn.Credential
 }
 
 func NewAuthenticator(
-	identityResolver authn.IdentifierResolver,
+	identityResolver authn.IdentityResolver,
 	store Store,
 	verifier Verifier,
 ) (Authenticator, error) {
