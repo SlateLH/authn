@@ -7,19 +7,25 @@ import (
 	"github.com/SlateLH/authn"
 )
 
+const Method authn.Method = "password"
+
 var (
 	errInvalidIdentityResolver = errors.New("invalid identity resolver")
 	errInvalidStore            = errors.New("invalid password store")
 	errInvalidVerifier         = errors.New("invalid password verifier")
 )
 
-type Input struct {
+type Credentials struct {
 	Identifier authn.Identifier
 	Password   string
 }
 
+func (c Credentials) Method() authn.Method {
+	return Method
+}
+
 type Authenticator interface {
-	Authenticate(ctx context.Context, input Input) (authn.AuthenticationResult, error)
+	Authenticate(ctx context.Context, creds authn.Credentials) (authn.AuthenticationResult, error)
 }
 
 type Store interface {
@@ -52,16 +58,21 @@ func (a *authenticator) validateDependencies() error {
 	return nil
 }
 
-func (a *authenticator) Authenticate(ctx context.Context, input Input) (authn.AuthenticationResult, error) {
+func (a *authenticator) Authenticate(ctx context.Context, creds authn.Credentials) (authn.AuthenticationResult, error) {
+	c, ok := creds.(Credentials)
+	if !ok {
+		return authn.AuthenticationResult{}, authn.ErrInvalidCredentials
+	}
+
 	if err := a.validateDependencies(); err != nil {
 		return authn.AuthenticationResult{}, err
 	}
 
-	if input.Password == "" {
+	if c.Password == "" {
 		return authn.AuthenticationResult{}, authn.ErrInvalidCredentials
 	}
 
-	identityID, err := a.identityResolver.Resolve(ctx, input.Identifier)
+	identityID, err := a.identityResolver.Resolve(ctx, c.Identifier)
 	if err != nil {
 		return authn.AuthenticationResult{}, authn.ErrInvalidCredentials
 	}
@@ -71,7 +82,7 @@ func (a *authenticator) Authenticate(ctx context.Context, input Input) (authn.Au
 		return authn.AuthenticationResult{}, authn.ErrInvalidCredentials
 	}
 
-	if err := a.verifier.Verify(ctx, hash, input.Password); err != nil {
+	if err := a.verifier.Verify(ctx, hash, c.Password); err != nil {
 		return authn.AuthenticationResult{}, authn.ErrInvalidCredentials
 	}
 

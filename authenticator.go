@@ -13,6 +13,6 @@ type AuthenticationResult struct {
 	Identity Identity
 }
 
-type Authenticator[Input any] interface {
-	Authenticate(ctx context.Context, input Input) (AuthenticationResult, error)
+type Authenticator interface {
+	Authenticate(ctx context.Context, creds Credentials) (AuthenticationResult, error)
 }
