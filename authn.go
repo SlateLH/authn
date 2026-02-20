@@ -13,7 +13,7 @@ type Method string
 
 type Service interface {
 	Register(method Method, auth Authenticator)
-	Authenticate(ctx context.Context, method Method, creds Credentials) (AuthenticationResult, error)
+	Authenticate(ctx context.Context, creds Credentials) (AuthenticationResult, error)
 }
 
 type service struct {
@@ -24,8 +24,8 @@ func (s *service) Register(method Method, auth Authenticator) {
 	s.methods[method] = auth
 }
 
-func (s *service) Authenticate(ctx context.Context, method Method, creds Credentials) (AuthenticationResult, error) {
-	auth, ok := s.methods[method]
+func (s *service) Authenticate(ctx context.Context, creds Credentials) (AuthenticationResult, error) {
+	auth, ok := s.methods[creds.Method()]
 	if auth == nil || !ok {
 		return AuthenticationResult{}, ErrInvalidMethod
 	}
