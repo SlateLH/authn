@@ -1,0 +1,2 @@
+# authkit
+Batteries-included authentication
