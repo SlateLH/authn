@@ -1,2 +1,2 @@
-# authkit
+# authn
 Batteries-included authentication
