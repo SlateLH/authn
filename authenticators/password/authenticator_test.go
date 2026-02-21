@@ -68,13 +68,13 @@ func TestNewInvalidDependencies(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		cfg := password.AuthenticatorConfig{
+		deps := password.AuthenticatorDeps{
 			IdentityResolver: tc.identityResolver,
 			Store:            tc.store,
 			Verifier:         tc.verifier,
 		}
 
-		_, err := password.NewAuthenticator(cfg)
+		_, err := password.NewAuthenticator(deps)
 
 		if err == nil {
 			t.Errorf("expected err not to be nil")
@@ -83,13 +83,13 @@ func TestNewInvalidDependencies(t *testing.T) {
 }
 
 func TestNew(t *testing.T) {
-	cfg := password.AuthenticatorConfig{
+	deps := password.AuthenticatorDeps{
 		IdentityResolver: &mockIdentityResolver{},
 		Store:            &mockStore{},
 		Verifier:         &mockVerifier{},
 	}
 
-	_, err := password.NewAuthenticator(cfg)
+	_, err := password.NewAuthenticator(deps)
 
 	if err != nil {
 		t.Errorf("expected err to be nil, received \"%v\"", err)
@@ -106,13 +106,13 @@ func TestInitiateInvalidCredentials(t *testing.T) {
 		{creds: password.NewCredentials(authn.Identifier{}, "")},
 	}
 
-	cfg := password.AuthenticatorConfig{
+	deps := password.AuthenticatorDeps{
 		IdentityResolver: &mockIdentityResolver{},
 		Store:            &mockStore{},
 		Verifier:         &mockVerifier{},
 	}
 
-	auth, _ := password.NewAuthenticator(cfg)
+	auth, _ := password.NewAuthenticator(deps)
 
 	for _, tc := range testCases {
 		_, err := auth.Initiate(context.Background(), tc.creds)
@@ -147,13 +147,13 @@ func TestInitiateFailed(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		cfg := password.AuthenticatorConfig{
+		deps := password.AuthenticatorDeps{
 			IdentityResolver: tc.identityResolver,
 			Store:            tc.store,
 			Verifier:         tc.verifier,
 		}
 
-		auth, _ := password.NewAuthenticator(cfg)
+		auth, _ := password.NewAuthenticator(deps)
 		result, _ := auth.Initiate(t.Context(), password.NewCredentials(authn.Identifier{}, "mock password"))
 
 		if result.Status != authn.StatusFailed {
@@ -163,13 +163,13 @@ func TestInitiateFailed(t *testing.T) {
 }
 
 func TestRespond(t *testing.T) {
-	cfg := password.AuthenticatorConfig{
+	deps := password.AuthenticatorDeps{
 		IdentityResolver: &mockIdentityResolver{},
 		Store:            &mockStore{},
 		Verifier:         &mockVerifier{},
 	}
 
-	auth, _ := password.NewAuthenticator(cfg)
+	auth, _ := password.NewAuthenticator(deps)
 	_, err := auth.Respond(context.Background(), nil, nil)
 
 	if err == nil {

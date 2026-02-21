@@ -154,38 +154,45 @@ func WithSessionDuration(duration time.Duration) authenticatorOption {
 	}
 }
 
-type AuthenticatorConfig struct {
+type AuthenticatorDeps struct {
 	IdentityResolver authn.IdentityResolver
 	Store            Store
 	Verifier         Verifier
+	Clock            authn.Clock
+	SessionDuration  time.Duration
 }
 
 func NewAuthenticator(
-	cfg AuthenticatorConfig,
-	options ...authenticatorOption,
+	deps AuthenticatorDeps,
 ) (authn.Authenticator, error) {
-	if cfg.IdentityResolver == nil {
+	if deps.IdentityResolver == nil {
 		return nil, errInvalidIdentityResolver
 	}
 
-	if cfg.Store == nil {
+	if deps.Store == nil {
 		return nil, errInvalidStore
 	}
 
-	if cfg.Verifier == nil {
+	if deps.Verifier == nil {
 		return nil, errInvalidVerifier
 	}
 
-	auth := &authenticator{
-		identityResolver: cfg.IdentityResolver,
-		store:            cfg.Store,
-		verifier:         cfg.Verifier,
-		clock:            authn.SystemClock{},
-		sessionDuration:  15 * time.Minute,
+	clock := deps.Clock
+	if clock == nil {
+		clock = authn.SystemClock{}
 	}
 
-	for _, option := range options {
-		option(auth)
+	sessionDuration := deps.SessionDuration
+	if sessionDuration == 0 {
+		sessionDuration = 15 * time.Minute
+	}
+
+	auth := &authenticator{
+		identityResolver: deps.IdentityResolver,
+		store:            deps.Store,
+		verifier:         deps.Verifier,
+		clock:            clock,
+		sessionDuration:  sessionDuration,
 	}
 
 	return auth, nil

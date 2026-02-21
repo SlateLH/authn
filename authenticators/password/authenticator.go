@@ -96,29 +96,29 @@ func (a *authenticator) Respond(ctx context.Context, session authn.Session, resp
 	return authn.Result{}, authn.ErrInvalidResponse
 }
 
-type AuthenticatorConfig struct {
+type AuthenticatorDeps struct {
 	IdentityResolver authn.IdentityResolver
 	Store            Store
 	Verifier         Verifier
 }
 
-func NewAuthenticator(cfg AuthenticatorConfig) (authn.Authenticator, error) {
-	if cfg.IdentityResolver == nil {
+func NewAuthenticator(deps AuthenticatorDeps) (authn.Authenticator, error) {
+	if deps.IdentityResolver == nil {
 		return nil, errInvalidIdentityResolver
 	}
 
-	if cfg.Store == nil {
+	if deps.Store == nil {
 		return nil, errInvalidStore
 	}
 
-	if cfg.Verifier == nil {
+	if deps.Verifier == nil {
 		return nil, errInvalidVerifier
 	}
 
 	auth := &authenticator{
-		identityResolver: cfg.IdentityResolver,
-		store:            cfg.Store,
-		verifier:         cfg.Verifier,
+		identityResolver: deps.IdentityResolver,
+		store:            deps.Store,
+		verifier:         deps.Verifier,
 	}
 
 	return auth, nil
