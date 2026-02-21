@@ -13,16 +13,16 @@ var (
 	errInvalidIdentityResolver = errors.New("invalid identity resolver")
 	errInvalidStore            = errors.New("invalid password store")
 	errInvalidVerifier         = errors.New("invalid password verifier")
-	ErrHashNotFound            = errors.New("hash not found")
+	ErrPasswordNotFound        = errors.New("password not found")
 	ErrWrongPassword           = errors.New("wrong password")
 )
 
 type Store interface {
-	FindHash(ctx context.Context, identityID string) (hash []byte, err error)
+	FindPassword(ctx context.Context, identityID string) (password []byte, err error)
 }
 
 type Verifier interface {
-	Verify(ctx context.Context, hash []byte, password string) error
+	Verify(ctx context.Context, password []byte, plain string) error
 }
 
 type authenticator struct {
@@ -62,16 +62,16 @@ func (a *authenticator) Initiate(ctx context.Context, credentials authn.Credenti
 		return authn.Result{}, err
 	}
 
-	hash, err := a.store.FindHash(ctx, identityID)
+	password, err := a.store.FindPassword(ctx, identityID)
 	if err != nil {
-		if errors.Is(err, ErrHashNotFound) {
+		if errors.Is(err, ErrPasswordNotFound) {
 			return authn.Result{Status: authn.StatusFailed}, nil
 		}
 
 		return authn.Result{}, err
 	}
 
-	err = a.verifier.Verify(ctx, hash, creds.Password())
+	err = a.verifier.Verify(ctx, password, creds.Password())
 	if err != nil {
 		if errors.Is(err, ErrWrongPassword) {
 			return authn.Result{Status: authn.StatusFailed}, nil
@@ -96,27 +96,29 @@ func (a *authenticator) Respond(ctx context.Context, session authn.Session, resp
 	return authn.Result{}, authn.ErrInvalidResponse
 }
 
-func NewAuthenticator(
-	identityResolver authn.IdentityResolver,
-	store Store,
-	verifier Verifier,
-) (authn.Authenticator, error) {
-	if identityResolver == nil {
+type AuthenticatorConfig struct {
+	IdentityResolver authn.IdentityResolver
+	Store            Store
+	Verifier         Verifier
+}
+
+func NewAuthenticator(cfg AuthenticatorConfig) (authn.Authenticator, error) {
+	if cfg.IdentityResolver == nil {
 		return nil, errInvalidIdentityResolver
 	}
 
-	if store == nil {
+	if cfg.Store == nil {
 		return nil, errInvalidStore
 	}
 
-	if verifier == nil {
+	if cfg.Verifier == nil {
 		return nil, errInvalidVerifier
 	}
 
 	auth := &authenticator{
-		identityResolver: identityResolver,
-		store:            store,
-		verifier:         verifier,
+		identityResolver: cfg.IdentityResolver,
+		store:            cfg.Store,
+		verifier:         cfg.Verifier,
 	}
 
 	return auth, nil

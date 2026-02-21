@@ -18,19 +18,19 @@ func (m *mockIdentityResolver) Resolve(ctx context.Context, identifier authn.Ide
 }
 
 type mockStore struct {
-	hash []byte
-	err  error
+	password []byte
+	err      error
 }
 
-func (m *mockStore) FindHash(ctx context.Context, identityID string) (hash []byte, err error) {
-	return m.hash, m.err
+func (m *mockStore) FindPassword(ctx context.Context, identityID string) (password []byte, err error) {
+	return m.password, m.err
 }
 
 type mockVerifier struct {
 	err error
 }
 
-func (m *mockVerifier) Verify(ctx context.Context, hash []byte, password string) error {
+func (m *mockVerifier) Verify(ctx context.Context, password []byte, plain string) error {
 	return m.err
 }
 
@@ -68,7 +68,13 @@ func TestNewInvalidDependencies(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		_, err := password.NewAuthenticator(tc.identityResolver, tc.store, tc.verifier)
+		cfg := password.AuthenticatorConfig{
+			IdentityResolver: tc.identityResolver,
+			Store:            tc.store,
+			Verifier:         tc.verifier,
+		}
+
+		_, err := password.NewAuthenticator(cfg)
 
 		if err == nil {
 			t.Errorf("expected err not to be nil")
@@ -77,7 +83,13 @@ func TestNewInvalidDependencies(t *testing.T) {
 }
 
 func TestNew(t *testing.T) {
-	_, err := password.NewAuthenticator(&mockIdentityResolver{}, &mockStore{}, &mockVerifier{})
+	cfg := password.AuthenticatorConfig{
+		IdentityResolver: &mockIdentityResolver{},
+		Store:            &mockStore{},
+		Verifier:         &mockVerifier{},
+	}
+
+	_, err := password.NewAuthenticator(cfg)
 
 	if err != nil {
 		t.Errorf("expected err to be nil, received \"%v\"", err)
@@ -94,8 +106,15 @@ func TestInitiateInvalidCredentials(t *testing.T) {
 		{creds: password.NewCredentials(authn.Identifier{}, "")},
 	}
 
+	cfg := password.AuthenticatorConfig{
+		IdentityResolver: &mockIdentityResolver{},
+		Store:            &mockStore{},
+		Verifier:         &mockVerifier{},
+	}
+
+	auth, _ := password.NewAuthenticator(cfg)
+
 	for _, tc := range testCases {
-		auth, _ := password.NewAuthenticator(&mockIdentityResolver{}, &mockStore{}, &mockVerifier{})
 		_, err := auth.Initiate(context.Background(), tc.creds)
 
 		if err == nil {
@@ -117,7 +136,7 @@ func TestInitiateFailed(t *testing.T) {
 		},
 		{
 			identityResolver: &mockIdentityResolver{},
-			store:            &mockStore{err: password.ErrHashNotFound},
+			store:            &mockStore{err: password.ErrPasswordNotFound},
 			verifier:         &mockVerifier{},
 		},
 		{
@@ -128,7 +147,13 @@ func TestInitiateFailed(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		auth, _ := password.NewAuthenticator(tc.identityResolver, tc.store, tc.verifier)
+		cfg := password.AuthenticatorConfig{
+			IdentityResolver: tc.identityResolver,
+			Store:            tc.store,
+			Verifier:         tc.verifier,
+		}
+
+		auth, _ := password.NewAuthenticator(cfg)
 		result, _ := auth.Initiate(t.Context(), password.NewCredentials(authn.Identifier{}, "mock password"))
 
 		if result.Status != authn.StatusFailed {
@@ -138,7 +163,13 @@ func TestInitiateFailed(t *testing.T) {
 }
 
 func TestRespond(t *testing.T) {
-	auth, _ := password.NewAuthenticator(&mockIdentityResolver{}, &mockStore{}, &mockVerifier{})
+	cfg := password.AuthenticatorConfig{
+		IdentityResolver: &mockIdentityResolver{},
+		Store:            &mockStore{},
+		Verifier:         &mockVerifier{},
+	}
+
+	auth, _ := password.NewAuthenticator(cfg)
 	_, err := auth.Respond(context.Background(), nil, nil)
 
 	if err == nil {
