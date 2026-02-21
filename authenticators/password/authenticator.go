@@ -31,11 +31,11 @@ type authenticator struct {
 	verifier         Verifier
 }
 
-func (a *authenticator) Method() authn.Method {
+func (a authenticator) Method() authn.Method {
 	return Method
 }
 
-func (a *authenticator) Initiate(ctx context.Context, credentials authn.Credentials) (authn.Result, error) {
+func (a authenticator) Initiate(ctx context.Context, credentials authn.Credentials) (authn.Result, error) {
 	if credentials == nil {
 		return authn.Result{}, authn.ErrInvalidCredentials
 	}
@@ -92,7 +92,7 @@ func (a *authenticator) Initiate(ctx context.Context, credentials authn.Credenti
 	return result, nil
 }
 
-func (a *authenticator) Respond(ctx context.Context, session authn.Session, response authn.Response) (authn.Result, error) {
+func (a authenticator) Respond(ctx context.Context, session authn.Session, response authn.Response) (authn.Result, error) {
 	return authn.Result{}, authn.ErrInvalidResponse
 }
 

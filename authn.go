@@ -37,7 +37,7 @@ func (s *service) Register(auth Authenticator) error {
 	return nil
 }
 
-func (s *service) Initiate(ctx context.Context, credentials Credentials) (Result, error) {
+func (s service) Initiate(ctx context.Context, credentials Credentials) (Result, error) {
 	if credentials == nil {
 		return Result{}, ErrInvalidCredentials
 	}
@@ -59,7 +59,7 @@ func (s *service) Initiate(ctx context.Context, credentials Credentials) (Result
 	return result, nil
 }
 
-func (s *service) Respond(ctx context.Context, session Session, response Response) (Result, error) {
+func (s service) Respond(ctx context.Context, session Session, response Response) (Result, error) {
 	if session == nil || response == nil {
 		return Result{Status: StatusFailed}, nil
 	}

@@ -13,7 +13,7 @@ type mockIdentityResolver struct {
 	err        error
 }
 
-func (m *mockIdentityResolver) Resolve(ctx context.Context, identifier authn.Identifier) (identityID string, err error) {
+func (m mockIdentityResolver) Resolve(ctx context.Context, identifier authn.Identifier) (identityID string, err error) {
 	return m.identityID, m.err
 }
 
@@ -22,7 +22,7 @@ type mockStore struct {
 	err      error
 }
 
-func (m *mockStore) FindPassword(ctx context.Context, identityID string) (password []byte, err error) {
+func (m mockStore) FindPassword(ctx context.Context, identityID string) (password []byte, err error) {
 	return m.password, m.err
 }
 
@@ -30,7 +30,7 @@ type mockVerifier struct {
 	err error
 }
 
-func (m *mockVerifier) Verify(ctx context.Context, password []byte, plain string) error {
+func (m mockVerifier) Verify(ctx context.Context, password []byte, plain string) error {
 	return m.err
 }
 
@@ -39,11 +39,11 @@ type mockCredentials struct {
 	method     authn.Method
 }
 
-func (m *mockCredentials) Identifier() authn.Identifier {
+func (m mockCredentials) Identifier() authn.Identifier {
 	return m.identifier
 }
 
-func (m *mockCredentials) Method() authn.Method {
+func (m mockCredentials) Method() authn.Method {
 	return m.method
 }
 
@@ -54,16 +54,16 @@ func TestNewInvalidDependencies(t *testing.T) {
 		verifier         password.Verifier
 	}{
 		{
-			store:    &mockStore{},
-			verifier: &mockVerifier{},
+			store:    mockStore{},
+			verifier: mockVerifier{},
 		},
 		{
-			identityResolver: &mockIdentityResolver{},
-			verifier:         &mockVerifier{},
+			identityResolver: mockIdentityResolver{},
+			verifier:         mockVerifier{},
 		},
 		{
-			identityResolver: &mockIdentityResolver{},
-			store:            &mockStore{},
+			identityResolver: mockIdentityResolver{},
+			store:            mockStore{},
 		},
 	}
 
@@ -84,9 +84,9 @@ func TestNewInvalidDependencies(t *testing.T) {
 
 func TestNew(t *testing.T) {
 	deps := password.AuthenticatorDeps{
-		IdentityResolver: &mockIdentityResolver{},
-		Store:            &mockStore{},
-		Verifier:         &mockVerifier{},
+		IdentityResolver: mockIdentityResolver{},
+		Store:            mockStore{},
+		Verifier:         mockVerifier{},
 	}
 
 	_, err := password.NewAuthenticator(deps)
@@ -101,15 +101,15 @@ func TestInitiateInvalidCredentials(t *testing.T) {
 		creds authn.Credentials
 	}{
 		{creds: nil},
-		{creds: &mockCredentials{method: "mock method"}},
-		{creds: &mockCredentials{method: password.Method}},
+		{creds: mockCredentials{method: "mock method"}},
+		{creds: mockCredentials{method: password.Method}},
 		{creds: password.NewCredentials(authn.Identifier{}, "")},
 	}
 
 	deps := password.AuthenticatorDeps{
-		IdentityResolver: &mockIdentityResolver{},
-		Store:            &mockStore{},
-		Verifier:         &mockVerifier{},
+		IdentityResolver: mockIdentityResolver{},
+		Store:            mockStore{},
+		Verifier:         mockVerifier{},
 	}
 
 	auth, _ := password.NewAuthenticator(deps)
@@ -130,19 +130,19 @@ func TestInitiateFailed(t *testing.T) {
 		verifier         password.Verifier
 	}{
 		{
-			identityResolver: &mockIdentityResolver{err: authn.ErrIdentityNotFound},
-			store:            &mockStore{},
-			verifier:         &mockVerifier{},
+			identityResolver: mockIdentityResolver{err: authn.ErrIdentityNotFound},
+			store:            mockStore{},
+			verifier:         mockVerifier{},
 		},
 		{
-			identityResolver: &mockIdentityResolver{},
-			store:            &mockStore{err: password.ErrPasswordNotFound},
-			verifier:         &mockVerifier{},
+			identityResolver: mockIdentityResolver{},
+			store:            mockStore{err: password.ErrPasswordNotFound},
+			verifier:         mockVerifier{},
 		},
 		{
-			identityResolver: &mockIdentityResolver{},
-			store:            &mockStore{},
-			verifier:         &mockVerifier{err: password.ErrWrongPassword},
+			identityResolver: mockIdentityResolver{},
+			store:            mockStore{},
+			verifier:         mockVerifier{err: password.ErrWrongPassword},
 		},
 	}
 
@@ -164,9 +164,9 @@ func TestInitiateFailed(t *testing.T) {
 
 func TestRespond(t *testing.T) {
 	deps := password.AuthenticatorDeps{
-		IdentityResolver: &mockIdentityResolver{},
-		Store:            &mockStore{},
-		Verifier:         &mockVerifier{},
+		IdentityResolver: mockIdentityResolver{},
+		Store:            mockStore{},
+		Verifier:         mockVerifier{},
 	}
 
 	auth, _ := password.NewAuthenticator(deps)

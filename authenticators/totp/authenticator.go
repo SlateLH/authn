@@ -34,11 +34,11 @@ type authenticator struct {
 	sessionDuration  time.Duration
 }
 
-func (a *authenticator) Method() authn.Method {
+func (a authenticator) Method() authn.Method {
 	return Method
 }
 
-func (a *authenticator) Initiate(ctx context.Context, credentials authn.Credentials) (authn.Result, error) {
+func (a authenticator) Initiate(ctx context.Context, credentials authn.Credentials) (authn.Result, error) {
 	if credentials == nil {
 		return authn.Result{}, authn.ErrInvalidCredentials
 	}
@@ -83,7 +83,7 @@ func (a *authenticator) Initiate(ctx context.Context, credentials authn.Credenti
 	return result, nil
 }
 
-func (a *authenticator) Respond(ctx context.Context, session authn.Session, response authn.Response) (authn.Result, error) {
+func (a authenticator) Respond(ctx context.Context, session authn.Session, response authn.Response) (authn.Result, error) {
 	if session == nil || response == nil {
 		return authn.Result{Status: authn.StatusFailed}, nil
 	}
@@ -140,20 +140,6 @@ func (a *authenticator) Respond(ctx context.Context, session authn.Session, resp
 	return result, nil
 }
 
-type authenticatorOption func(*authenticator)
-
-func WithClock(clock authn.Clock) authenticatorOption {
-	return func(a *authenticator) {
-		a.clock = clock
-	}
-}
-
-func WithSessionDuration(duration time.Duration) authenticatorOption {
-	return func(a *authenticator) {
-		a.sessionDuration = duration
-	}
-}
-
 type AuthenticatorDeps struct {
 	IdentityResolver authn.IdentityResolver
 	Store            Store
@@ -162,9 +148,7 @@ type AuthenticatorDeps struct {
 	SessionDuration  time.Duration
 }
 
-func NewAuthenticator(
-	deps AuthenticatorDeps,
-) (authn.Authenticator, error) {
+func NewAuthenticator(deps AuthenticatorDeps) (authn.Authenticator, error) {
 	if deps.IdentityResolver == nil {
 		return nil, errInvalidIdentityResolver
 	}
