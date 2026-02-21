@@ -60,6 +60,25 @@ func TestNewValidIdentityResolver(t *testing.T) {
 	}
 }
 
+func TestRegisterInvalidAuthenticator(t *testing.T) {
+	svc, _ := authn.New(&mockIdentityResolver{})
+	err := svc.Register(nil)
+
+	if err == nil {
+		t.Errorf("expected err to not be nil")
+	}
+}
+
+func TestRegisterMethodAlreadyRegistered(t *testing.T) {
+	svc, _ := authn.New(&mockIdentityResolver{})
+	svc.Register(&mockAuthenticator{})
+	err := svc.Register(&mockAuthenticator{})
+
+	if err == nil {
+		t.Errorf("expected err to not be nil")
+	}
+}
+
 func TestAuthenticateInvalidMethod(t *testing.T) {
 	testCases := []struct {
 		creds authn.Credentials
@@ -102,13 +121,13 @@ func TestAuthenticate(t *testing.T) {
 
 	svc, _ := authn.New(&mockIdentityResolver{identityID: identityID})
 	svc.Register(&mockAuthenticator{authenticationResult: result})
-	actualResult, actualErr := svc.Authenticate(context.Background(), &mockCredentials{})
+	actualResult, err := svc.Authenticate(context.Background(), &mockCredentials{})
 
 	if identityID != actualResult.Identity.ID {
 		t.Errorf("expected identity ID to be \"%s\", received \"%s\"", identityID, actualResult.Identity.ID)
 	}
 
-	if err != actualErr {
-		t.Errorf("expected err to be \"%v\", received \"%v\"", err, actualErr)
+	if err != nil {
+		t.Errorf("expected err to be nil, received \"%v\"", err)
 	}
 }

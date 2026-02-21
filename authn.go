@@ -8,12 +8,18 @@ import (
 var (
 	errInvalidMethod           = errors.New("invalid method")
 	errInvalidIdentityResolver = errors.New("invalid identity resolver")
+	errInvalidAuthenticator    = errors.New("invalid authenticator")
+	errMethodAlreadyRegistered = errors.New("method already registered")
 )
 
 type Method string
 
 type Service interface {
-	Register(auth Authenticator)
+	/*
+		This function is not guaranteed to be safe for concurrent use.
+		The default implementation provided by authn (from [New]) is not safe for concurrency.
+	*/
+	Register(auth Authenticator) error
 	Authenticate(ctx context.Context, creds Credentials) (AuthenticationResult, error)
 }
 
@@ -22,15 +28,21 @@ type service struct {
 	identityResolver IdentityResolver
 }
 
-func (s *service) Register(auth Authenticator) {
+func (s *service) Register(auth Authenticator) error {
+	if auth == nil {
+		return errInvalidAuthenticator
+	}
+
+	existing, ok := s.methods[auth.Method()]
+	if existing != nil || ok {
+		return errMethodAlreadyRegistered
+	}
+
 	s.methods[auth.Method()] = auth
+	return nil
 }
 
 func (s *service) Authenticate(ctx context.Context, creds Credentials) (AuthenticationResult, error) {
-	if s.identityResolver == nil {
-		return AuthenticationResult{}, errInvalidIdentityResolver
-	}
-
 	if creds == nil {
 		return AuthenticationResult{}, errInvalidMethod
 	}
@@ -45,7 +57,12 @@ func (s *service) Authenticate(ctx context.Context, creds Credentials) (Authenti
 		return AuthenticationResult{}, ErrInvalidCredentials
 	}
 
-	return auth.Authenticate(ctx, identityID, creds)
+	result, err := auth.Authenticate(ctx, identityID, creds)
+	if err != nil {
+		return AuthenticationResult{}, ErrInvalidCredentials
+	}
+
+	return result, nil
 }
 
 func New(identityResolver IdentityResolver) (Service, error) {

@@ -44,11 +44,6 @@ func NewCredentials(identifier authn.Identifier, password string) Credentials {
 	}
 }
 
-type Authenticator interface {
-	Method() authn.Method
-	Authenticate(ctx context.Context, identityID string, creds authn.Credentials) (authn.AuthenticationResult, error)
-}
-
 type Store interface {
 	FindHash(ctx context.Context, identityID string) (hash []byte, err error)
 }
@@ -62,18 +57,6 @@ type authenticator struct {
 	verifier Verifier
 }
 
-func (a *authenticator) validateDependencies() error {
-	if a.store == nil {
-		return errInvalidStore
-	}
-
-	if a.verifier == nil {
-		return errInvalidVerifier
-	}
-
-	return nil
-}
-
 func (a *authenticator) Method() authn.Method {
 	return Method
 }
@@ -82,10 +65,6 @@ func (a *authenticator) Authenticate(ctx context.Context, identityID string, cre
 	c, ok := creds.(Credentials)
 	if !ok {
 		return authn.AuthenticationResult{}, authn.ErrInvalidCredentials
-	}
-
-	if err := a.validateDependencies(); err != nil {
-		return authn.AuthenticationResult{}, err
 	}
 
 	if c.Password() == "" {
@@ -115,14 +94,18 @@ func (a *authenticator) Authenticate(ctx context.Context, identityID string, cre
 func NewAuthenticator(
 	store Store,
 	verifier Verifier,
-) (Authenticator, error) {
+) (authn.Authenticator, error) {
+	if store == nil {
+		return nil, errInvalidStore
+	}
+
+	if verifier == nil {
+		return nil, errInvalidVerifier
+	}
+
 	auth := &authenticator{
 		store:    store,
 		verifier: verifier,
-	}
-
-	if err := auth.validateDependencies(); err != nil {
-		return nil, err
 	}
 
 	return auth, nil
