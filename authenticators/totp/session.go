@@ -1,7 +1,6 @@
 package totp
 
 import (
-	"crypto/rand"
 	"encoding/json"
 	"time"
 
@@ -62,11 +61,8 @@ func WithId(id string) sessionOption {
 }
 
 func NewSession(expiresAt time.Time, status authn.Status, payload sessionPayload, options ...sessionOption) Session {
-	t := time.Now().UTC()
-	entropy := ulid.Monotonic(rand.Reader, 0)
-
 	s := session{
-		id:        ulid.MustNew(ulid.Timestamp(t), entropy).String(),
+		id:        ulid.MustNewDefault(time.Now().UTC()).String(),
 		expiresAt: expiresAt,
 		status:    status,
 		payload:   payload,
