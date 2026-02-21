@@ -2,18 +2,20 @@ package authn
 
 import (
 	"context"
-	"errors"
 )
 
-var (
-	ErrInvalidCredentials = errors.New("invalid credentials")
-)
+type Method string
+type Status string
 
-type AuthenticationResult struct {
-	Identity Identity
-}
+const (
+	StatusAuthenticated Status = "authenticated"
+	StatusChallenged    Status = "challenged"
+	StatusPending       Status = "pending"
+	StatusFailed        Status = "failed"
+)
 
 type Authenticator interface {
 	Method() Method
-	Authenticate(ctx context.Context, identityID string, creds Credentials) (AuthenticationResult, error)
+	Initiate(ctx context.Context, credentials Credentials) (Result, error)
+	Respond(ctx context.Context, session Session, response Response) (Result, error)
 }

@@ -1,6 +1,11 @@
 package authn
 
-import "context"
+import (
+	"context"
+	"errors"
+)
+
+var ErrIdentityNotFound = errors.New("identity not found")
 
 type Identity struct {
 	ID string
