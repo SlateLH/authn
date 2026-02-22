@@ -49,7 +49,7 @@ func (s service) Initiate(ctx context.Context, credentials Credentials) (Result,
 
 	result, err := auth.Initiate(ctx, credentials)
 	if err != nil {
-		return Result{}, fmt.Errorf("%w: %v", ErrInvalidCredentials, err)
+		return Result{}, err
 	}
 
 	if err := validateResult(result); err != nil {
