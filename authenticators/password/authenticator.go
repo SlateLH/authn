@@ -96,6 +96,8 @@ func (a authenticator) Respond(ctx context.Context, session authn.Session, respo
 	return authn.Result{}, authn.ErrInvalidResponse
 }
 
+var _ authn.Authenticator = (*authenticator)(nil)
+
 type AuthenticatorDeps struct {
 	IdentityResolver authn.IdentityResolver
 	Store            Store

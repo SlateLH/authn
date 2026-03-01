@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/SlateLH/authn"
+	"github.com/oklog/ulid/v2"
 )
 
 const Method authn.Method = "totp"
@@ -71,8 +72,13 @@ func (a authenticator) Initiate(ctx context.Context, credentials authn.Credentia
 		return authn.Result{}, err
 	}
 
-	expiresAt := a.clock.Now().Add(a.sessionDuration)
-	session := NewSession(expiresAt, authn.StatusChallenged, sessionPayload{IdentityID: identityID})
+	session := Session{
+		id:        ulid.MustNewDefault(time.Now().UTC()).String(),
+		expiresAt: a.clock.Now().Add(a.sessionDuration),
+		status:    authn.StatusChallenged,
+		payload:   SessionPayload{IdentityID: identityID},
+	}
+
 	challenge := NewChallenge()
 
 	result := authn.Result{
@@ -140,6 +146,8 @@ func (a authenticator) Respond(ctx context.Context, session authn.Session, respo
 
 	return result, nil
 }
+
+var _ authn.Authenticator = (*authenticator)(nil)
 
 type AuthenticatorDeps struct {
 	IdentityResolver authn.IdentityResolver

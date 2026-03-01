@@ -19,6 +19,8 @@ func (r response) Method() authn.Method {
 	return Method
 }
 
+var _ authn.Response = (*response)(nil)
+
 func NewResponse(code string) Response {
 	return response{code: code}
 }

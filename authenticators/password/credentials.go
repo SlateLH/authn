@@ -25,6 +25,8 @@ func (c credentials) Method() authn.Method {
 	return Method
 }
 
+var _ authn.Credentials = (*credentials)(nil)
+
 func NewCredentials(identifier authn.Identifier, password string) Credentials {
 	return credentials{
 		identifier: identifier,

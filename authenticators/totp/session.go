@@ -4,67 +4,37 @@ import (
 	"time"
 
 	"github.com/SlateLH/authn"
-	"github.com/oklog/ulid/v2"
 )
 
-type sessionPayload struct {
-	IdentityID string `json:"identityId"`
+type SessionPayload struct {
+	IdentityID string
 }
 
-type Session interface {
-	ID() string
-	Method() authn.Method
-	ExpiresAt() time.Time
-	Status() authn.Status
-	Payload() sessionPayload
-}
-
-type session struct {
+type Session struct {
 	id        string
 	expiresAt time.Time
 	status    authn.Status
-	payload   sessionPayload
+	payload   SessionPayload
 }
 
-func (s session) ID() string {
+func (s Session) ID() string {
 	return s.id
 }
 
-func (s session) Method() authn.Method {
+func (s Session) Method() authn.Method {
 	return Method
 }
 
-func (s session) ExpiresAt() time.Time {
+func (s Session) ExpiresAt() time.Time {
 	return s.expiresAt
 }
 
-func (s session) Status() authn.Status {
+func (s Session) Status() authn.Status {
 	return s.status
 }
 
-func (s session) Payload() sessionPayload {
+func (s Session) Payload() SessionPayload {
 	return s.payload
 }
 
-type sessionOption func(*session)
-
-func WithId(id string) sessionOption {
-	return func(s *session) {
-		s.id = id
-	}
-}
-
-func NewSession(expiresAt time.Time, status authn.Status, payload sessionPayload, options ...sessionOption) Session {
-	s := session{
-		id:        ulid.MustNewDefault(time.Now().UTC()).String(),
-		expiresAt: expiresAt,
-		status:    status,
-		payload:   payload,
-	}
-
-	for _, option := range options {
-		option(&s)
-	}
-
-	return s
-}
+var _ authn.Session = (*Session)(nil)
