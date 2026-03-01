@@ -72,12 +72,12 @@ func (a authenticator) Initiate(ctx context.Context, credentials authn.Credentia
 		return authn.Result{}, err
 	}
 
-	session := Session{
-		id:        ulid.MustNewDefault(time.Now().UTC()).String(),
-		expiresAt: a.clock.Now().Add(a.sessionDuration),
-		status:    authn.StatusChallenged,
-		payload:   SessionPayload{IdentityID: identityID},
-	}
+	session := NewSession(
+		ulid.MustNewDefault(time.Now().UTC()).String(),
+		a.clock.Now().Add(a.sessionDuration),
+		authn.StatusChallenged,
+		SessionPayload{IdentityID: identityID},
+	)
 
 	challenge := NewChallenge()
 

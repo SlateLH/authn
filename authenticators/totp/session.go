@@ -38,3 +38,12 @@ func (s Session) Payload() SessionPayload {
 }
 
 var _ authn.Session = (*Session)(nil)
+
+func NewSession(id string, expiresAt time.Time, status authn.Status, payload SessionPayload) Session {
+	return Session{
+		id:        id,
+		expiresAt: expiresAt,
+		status:    status,
+		payload:   payload,
+	}
+}
