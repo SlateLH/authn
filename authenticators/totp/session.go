@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/SlateLH/authn/authn"
+	"github.com/SlateLH/authn"
 	"github.com/oklog/ulid/v2"
 )
 

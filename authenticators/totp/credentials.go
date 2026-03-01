@@ -1,6 +1,6 @@
 package totp
 
-import "github.com/SlateLH/authn/authn"
+import "github.com/SlateLH/authn"
 
 type Credentials interface {
 	Identifier() authn.Identifier

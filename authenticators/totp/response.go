@@ -1,6 +1,6 @@
 package totp
 
-import "github.com/SlateLH/authn/authn"
+import "github.com/SlateLH/authn"
 
 type Response interface {
 	Code() string

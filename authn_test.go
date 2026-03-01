@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/SlateLH/authn/authn"
+	"github.com/SlateLH/authn"
 )
 
 const mockMethod authn.Method = "mock method"
