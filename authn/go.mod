@@ -1,4 +1,4 @@
-module github.com/SlateLH/authn
+module github.com/SlateLH/authn/authn
 
 go 1.25.5
 

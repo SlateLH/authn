@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/SlateLH/authn"
+	"github.com/SlateLH/authn/authn"
 )
 
 const Method authn.Method = "totp"

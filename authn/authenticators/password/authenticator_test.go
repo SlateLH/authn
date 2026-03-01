@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/SlateLH/authn"
-	"github.com/SlateLH/authn/authenticators/password"
+	"github.com/SlateLH/authn/authn"
+	"github.com/SlateLH/authn/authn/authenticators/password"
 )
 
 type mockIdentityResolver struct {

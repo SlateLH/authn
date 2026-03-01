@@ -1,6 +1,6 @@
 package totp
 
-import "github.com/SlateLH/authn"
+import "github.com/SlateLH/authn/authn"
 
 const ChallengeType authn.ChallengeType = "totp"
 

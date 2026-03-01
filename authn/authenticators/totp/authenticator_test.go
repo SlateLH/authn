@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/SlateLH/authn"
-	"github.com/SlateLH/authn/authenticators/totp"
+	"github.com/SlateLH/authn/authn"
+	"github.com/SlateLH/authn/authn/authenticators/totp"
 )
 
 type mockIdentityResolver struct {
