@@ -19,6 +19,6 @@ type Session interface {
 	Marshal() ([]byte, error)
 }
 
-type SessionResolver interface {
-	Resolve(ctx context.Context, sessionID string) (Session, error)
+type SessionStore interface {
+	Find(ctx context.Context, sessionID string) (Session, error)
 }
