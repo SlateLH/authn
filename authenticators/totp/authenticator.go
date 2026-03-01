@@ -9,6 +9,7 @@ import (
 )
 
 const Method authn.Method = "totp"
+const DefaultSessionDuration time.Duration = 15 * time.Minute
 
 var (
 	errInvalidIdentityResolver = errors.New("invalid identity resolver")
@@ -145,10 +146,13 @@ type AuthenticatorDeps struct {
 	Store            Store
 	Verifier         Verifier
 	Clock            authn.Clock
-	SessionDuration  time.Duration
 }
 
-func NewAuthenticator(deps AuthenticatorDeps) (authn.Authenticator, error) {
+type AuthenticatorConfig struct {
+	SessionDuration time.Duration
+}
+
+func NewAuthenticator(deps AuthenticatorDeps, cfg AuthenticatorConfig) (authn.Authenticator, error) {
 	if deps.IdentityResolver == nil {
 		return nil, errInvalidIdentityResolver
 	}
@@ -166,9 +170,9 @@ func NewAuthenticator(deps AuthenticatorDeps) (authn.Authenticator, error) {
 		clock = authn.SystemClock{}
 	}
 
-	sessionDuration := deps.SessionDuration
+	sessionDuration := cfg.SessionDuration
 	if sessionDuration == 0 {
-		sessionDuration = 15 * time.Minute
+		sessionDuration = DefaultSessionDuration
 	}
 
 	auth := &authenticator{
