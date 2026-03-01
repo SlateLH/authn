@@ -1,11 +1,15 @@
 package authn
 
 import (
+	"context"
 	"errors"
 	"time"
 )
 
-var ErrInvalidSession = errors.New("invalid session")
+var (
+	ErrInvalidSession  = errors.New("invalid session")
+	ErrSessionNotFound = errors.New("session not found")
+)
 
 type Session interface {
 	ID() string
@@ -13,4 +17,8 @@ type Session interface {
 	ExpiresAt() time.Time
 	Status() Status
 	Marshal() ([]byte, error)
+}
+
+type SessionResolver interface {
+	Resolve(ctx context.Context, sessionID string) (Session, error)
 }
