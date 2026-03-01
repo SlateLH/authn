@@ -16,7 +16,6 @@ type Session interface {
 	Method() Method
 	ExpiresAt() time.Time
 	Status() Status
-	Marshal() ([]byte, error)
 }
 
 type SessionStore interface {

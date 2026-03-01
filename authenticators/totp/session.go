@@ -1,7 +1,6 @@
 package totp
 
 import (
-	"encoding/json"
 	"time"
 
 	"github.com/SlateLH/authn"
@@ -17,7 +16,6 @@ type Session interface {
 	Method() authn.Method
 	ExpiresAt() time.Time
 	Status() authn.Status
-	Marshal() ([]byte, error)
 	Payload() sessionPayload
 }
 
@@ -42,10 +40,6 @@ func (s session) ExpiresAt() time.Time {
 
 func (s session) Status() authn.Status {
 	return s.status
-}
-
-func (s session) Marshal() ([]byte, error) {
-	return json.Marshal(s.payload)
 }
 
 func (s session) Payload() sessionPayload {
